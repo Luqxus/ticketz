@@ -14,7 +14,7 @@ const (
 	host     = "localhost"
 	port     = 5432
 	user     = "luqus"
-	password = "Luqus-@1041"
+	password = ""
 	dbname   = "ticketz"
 )
 
