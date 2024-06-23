@@ -25,10 +25,21 @@ func (s *EventService) CreateEvent(ctx context.Context, reqData types.CreateEven
 	event.EventID = uuid.NewString()
 	event.Title = reqData.Title
 	event.Description = reqData.Description
+	event.TicketPrice = reqData.TicketPrice
+	event.EventDate = reqData.EventDate
+	event.EndTime = reqData.EndTime
 	event.ImageUrl = reqData.ImageUrl
 	event.Location = reqData.Location
+	event.Location.LocationID = uuid.NewString()
 	event.CreatedAt = time.Now().UTC().Local()
 
 	return s.storage.CreatEvent(ctx, event)
+}
 
+func (s *EventService) GetEvents(ctx context.Context) ([]*types.Event, error) {
+	return s.storage.GetEvents(ctx)
+}
+
+func (s *EventService) GetEvent(ctx context.Context, event_id string) (*types.Event, error) {
+	return s.storage.GetEvent(ctx, event_id)
 }
