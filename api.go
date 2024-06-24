@@ -19,13 +19,15 @@ type APIServer struct {
 	listenAddress string
 	router        *http.ServeMux
 	eventService  *service.EventService
+	userService   service.UserService
 }
 
-func NewAPIServer(listenAddress string, eventService *service.EventService) *APIServer {
+func NewAPIServer(listenAddress string, userService *service.UserService, eventService *service.EventService) *APIServer {
 	return &APIServer{
 		listenAddress: listenAddress,
 		router:        http.NewServeMux(),
 		eventService:  eventService,
+		userService:   *userService,
 	}
 }
 
@@ -49,6 +51,42 @@ func handlerFunc(fn APIFunc) http.HandlerFunc {
 			log.Panic(err)
 		}
 	}
+}
+
+func (api *APIServer) createUser(w http.ResponseWriter, r *http.Request) error {
+	reqData := new(types.CreateUser)
+
+	if err := RequestReader(r.Body, reqData); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return nil
+	}
+
+	err := api.userService.SignUp(r.Context(), reqData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, map[string]string{"message": "user created"})
+}
+
+func (api *APIServer) signIn(w http.ResponseWriter, r *http.Request) error {
+	reqData := new(types.LoginData)
+
+	if err := RequestReader(r.Body, reqData); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return nil
+	}
+
+	user, token, err := api.userService.SignIn(r.Context(), reqData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	w.Header().Set("authorization", token)
+
+	return ResponseWriter(w, user)
 }
 
 func (api *APIServer) createEvent(w http.ResponseWriter, r *http.Request) error {

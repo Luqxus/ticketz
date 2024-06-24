@@ -34,9 +34,10 @@ func main() {
 	}
 
 	eventService := service.NewEventService(storage)
+	userService := service.NewUserService(storage)
 
 	listenAddress := fmt.Sprintf("%s:%s", address, port)
-	server := NewAPIServer(listenAddress, eventService)
+	server := NewAPIServer(listenAddress, userService, eventService)
 
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
