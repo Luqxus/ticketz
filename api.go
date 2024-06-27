@@ -33,6 +33,13 @@ func NewAPIServer(listenAddress string, userService *service.UserService, eventS
 
 func (api *APIServer) Run() error {
 
+	api.router.HandleFunc("POST /users", handlerFunc(api.createUser))
+	api.router.HandleFunc("POST /users/login", handlerFunc(api.signIn))
+
+	api.router.HandleFunc("POST /events/ticket", handlerFunc(api.buyTicket))
+	api.router.HandleFunc("GET /tickets", handlerFunc(api.getTickets))
+	api.router.HandleFunc("GET /tickets/{ticket}", handlerFunc(api.getTicket))
+
 	api.router.HandleFunc("POST /events", handlerFunc(api.createEvent))
 	api.router.HandleFunc("GET /events/event/{event_id}", handlerFunc(api.getEvent))
 	api.router.HandleFunc("GET /events/", handlerFunc(api.getEvents))
@@ -136,6 +143,52 @@ func (api *APIServer) getEvent(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return ResponseWriter(w, event)
+}
+
+func (api *APIServer) buyTicket(w http.ResponseWriter, r *http.Request) error {
+	event_id := r.URL.Query().Get("eventid")
+	if event_id == "" {
+		http.Error(w, "event id query param not provided", http.StatusBadRequest)
+		return nil
+	}
+
+	uid := ""
+
+	err := api.eventService.BuyTicket(r.Context(), uid, event_id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, map[string]string{"message": "purchase successful"})
+}
+
+func (api *APIServer) getTickets(w http.ResponseWriter, r *http.Request) error {
+	uid := ""
+
+	tickets, err := api.eventService.GetTickets(r.Context(), uid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, tickets)
+}
+
+func (api *APIServer) getTicket(w http.ResponseWriter, r *http.Request) error {
+	ticketID := r.URL.Query().Get("ticketid")
+	if ticketID == "" {
+		http.Error(w, "ticket id query param not provided", http.StatusBadRequest)
+		return nil
+	}
+	ticket, err := api.eventService.GetTicket(r.Context(), ticketID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, ticket)
+
 }
 
 // func (api *APIServer) removeEvent(w http.ResponseWriter, r *http.Request) error {
