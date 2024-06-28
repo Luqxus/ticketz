@@ -43,3 +43,16 @@ func (s *EventService) GetEvents(ctx context.Context) ([]*types.Event, error) {
 func (s *EventService) GetEvent(ctx context.Context, event_id string) (*types.Event, error) {
 	return s.storage.GetEvent(ctx, event_id)
 }
+
+func (s *EventService) BuyTicket(ctx context.Context, uid string, eventID string) error {
+
+	return s.storage.CreateTicket(ctx, uid, eventID)
+}
+
+func (s *EventService) GetTicket(ctx context.Context, ticketID string) (*types.Ticket, error) {
+	return s.storage.GetTicket(ctx, ticketID)
+}
+
+func (s *EventService) GetTickets(ctx context.Context, uid string) ([]*types.Ticket, error) {
+	return s.storage.GetTickets(ctx, uid)
+}

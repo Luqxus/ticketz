@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
 	"github.com/luquxSentinel/ticketz/types"
@@ -220,4 +221,91 @@ func (pg *PgStorage) CountEmail(ctx context.Context, email string) (int64, error
 	}
 
 	return count, nil
+}
+
+func (pg *PgStorage) CreateTicket(ctx context.Context, uid string, eventID string) error {
+	query := `
+	INSERT INTO Ticket (ticket_id, uid, event_id, created_at)
+	VALUES ($1, $2, $3, $4)`
+
+	_, err := pg.db.ExecContext(ctx, query, uuid.NewString(), uid, eventID, time.Now().UTC().Local())
+
+	return err
+}
+
+func (pg *PgStorage) GetTicket(ctx context.Context, ticketID string) (*types.Ticket, error) {
+	query := `SELECT t.ticket_id, e.event_id, e.title, e.ticket_price, e.event_date, e.end_time, e.image_url, l.city, l.province, l.country
+	FROM ticket t
+	JOIN event e ON t.event_id = e.event_id
+	JOIN location l ON e.event_id = l.event_id
+	WHERE t.ticket_id=$1`
+
+	row := pg.db.QueryRowContext(ctx, query, ticketID)
+
+	if row.Err() != nil {
+		return nil, row.Err()
+	}
+
+	ticket := new(types.Ticket)
+
+	err := row.Scan(
+		&ticket.TicketID,
+		&ticket.EventID,
+		&ticket.EventTitle,
+		&ticket.TicketPrice,
+		&ticket.EventDate,
+		&ticket.EventEndTime,
+		&ticket.EventImageUrl,
+		&ticket.EventLocation.City,
+		&ticket.EventLocation.Provice,
+		&ticket.EventLocation.Country,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ticket, nil
+}
+
+func (pg *PgStorage) GetTickets(ctx context.Context, uid string) ([]*types.Ticket, error) {
+	query := `SELECT t.ticket_id, e.event_id, e.title, e.ticket_price, e.event_date, e.end_time, e.image_url, l.city, l.province, l.country
+	FROM ticket t
+	JOIN event e ON t.event_id = e.event_id
+	JOIN location l ON e.event_id = l.event_id
+	WHERE t.uid=$1`
+
+	result, err := pg.db.QueryContext(ctx, query, uid)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tickets := make([]*types.Ticket, 0)
+
+	for result.Next() {
+		ticket := new(types.Ticket)
+
+		err := result.Scan(
+			&ticket.TicketID,
+			&ticket.EventID,
+			&ticket.EventTitle,
+			&ticket.TicketPrice,
+			&ticket.EventDate,
+			&ticket.EventEndTime,
+			&ticket.EventImageUrl,
+			&ticket.EventLocation.City,
+			&ticket.EventLocation.Provice,
+			&ticket.EventLocation.Country,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		tickets = append(tickets, ticket)
+
+	}
+
+	return tickets, nil
 }

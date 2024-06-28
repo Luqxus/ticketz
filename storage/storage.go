@@ -14,6 +14,9 @@ type Storage interface {
 	CreatEvent(ctx context.Context, event *types.Event) error
 	GetEvents(ctx context.Context) ([]*types.Event, error)
 	GetEvent(ctx context.Context, id string) (*types.Event, error)
+	CreateTicket(ctx context.Context, uid string, eventID string) error
+	GetTickets(ctx context.Context, uid string) ([]*types.Ticket, error)
+	GetTicket(ctx context.Context, ticketID string) (*types.Ticket, error)
 }
 
 type MockStorage struct{}
