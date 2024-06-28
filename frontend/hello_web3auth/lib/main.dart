@@ -6,7 +6,7 @@ import 'package:hello_web3auth/bloc/auth/event.dart';
 import 'package:hello_web3auth/service/secure_storage.dart';
 
 void main() {
-  runApp(TicketzApp());
+  runApp(const TicketzApp());
 }
 
 class TicketzApp extends StatelessWidget {
