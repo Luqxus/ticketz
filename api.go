@@ -33,11 +33,31 @@ func NewAPIServer(listenAddress string, userService *service.UserService, eventS
 
 func (api *APIServer) Run() error {
 
+	// ---- authentication endpoints ----
+
+	// create a new account
+	api.router.HandleFunc("POST /users/register", handlerFunc(api.createUser))
+
+	// signin with existing account
+	api.router.HandleFunc("POST /users/signin", handlerFunc(api.signIn))
+
+	// ---- events endpoints -----
+
+	// create a new event
 	api.router.HandleFunc("POST /events", handlerFunc(api.createEvent))
+
+	// get event by :event_id
 	api.router.HandleFunc("GET /events/event/{event_id}", handlerFunc(api.getEvent))
+
+	// get all events
 	api.router.HandleFunc("GET /events/", handlerFunc(api.getEvents))
 
-	// start server and listen
+	// ------ tickets endpoints -----
+	// TODO: buy ticket
+	// TODO: get ticket
+	// TODO: get tickets by :uid
+
+	// --- start server and listen ---
 	return http.ListenAndServe(api.listenAddress, api.router)
 }
 
@@ -61,17 +81,21 @@ func (api *APIServer) createUser(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	err := api.userService.SignUp(r.Context(), reqData)
+	user, token, err := api.userService.SignUp(r.Context(), reqData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return nil
 	}
 
-	return ResponseWriter(w, map[string]string{"message": "user created"})
+	w.Header().Set("authorization", token)
+	w.WriteHeader(200)
+	return ResponseWriter(w, user)
 }
 
 func (api *APIServer) signIn(w http.ResponseWriter, r *http.Request) error {
 	reqData := new(types.LoginData)
+
+	log.Printf("%+v", reqData)
 
 	if err := RequestReader(r.Body, reqData); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -85,6 +109,7 @@ func (api *APIServer) signIn(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.Header().Set("authorization", token)
+	w.WriteHeader(200)
 
 	return ResponseWriter(w, user)
 }

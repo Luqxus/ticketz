@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -166,24 +167,35 @@ func (pg *PgStorage) GetEvent(ctx context.Context, event_id string) (*types.Even
 	return event, nil
 }
 
-func (pg *PgStorage) CreateUser(ctx context.Context, uid string, email string, username string, password string, createdAt time.Time) error {
+func (pg *PgStorage) CreateUser(
+	ctx context.Context,
+	uid string,
+	email string,
+	username string,
+	password string,
+	createdAt time.Time,
+) (*types.User, error) {
 	query := `
-	INSERT INTO User (uid, email, username, password, created_at)
+	INSERT INTO Users (uid, email, username, password, created_at)
 	VALUES ($1, $2, $3, $4, $5)
 	`
 
 	_, err := pg.db.ExecContext(ctx, query, uid, email, username, password, createdAt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	user, err := pg.GetUser(ctx, email)
+	if err != nil {
+		return nil, errors.New("error signing you up")
+	}
+	return user, nil
 }
 
 func (pg *PgStorage) GetUser(ctx context.Context, email string) (*types.User, error) {
 	query := `
 	SELECT uid, email, username, password, created_at
-	FROM User
+	FROM Users
 	WHERE email=$1`
 
 	row := pg.db.QueryRowContext(ctx, query, email)
@@ -194,7 +206,7 @@ func (pg *PgStorage) GetUser(ctx context.Context, email string) (*types.User, er
 
 	user := new(types.User)
 
-	err := row.Scan(&user.UID, &user.Username, &user.Password, &user.CreatedAt)
+	err := row.Scan(&user.UID, &user.Email, &user.Username, &user.Password, &user.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +215,7 @@ func (pg *PgStorage) GetUser(ctx context.Context, email string) (*types.User, er
 }
 
 func (pg *PgStorage) CountEmail(ctx context.Context, email string) (int64, error) {
-	query := `SELECT COUNT(email) FROM User WHERE email=$1`
+	query := `SELECT COUNT(email) FROM Users WHERE email=$1`
 
 	var count int64
 

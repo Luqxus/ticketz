@@ -22,23 +22,23 @@ func NewUserService(storage storage.Storage) *UserService {
 	}
 }
 
-func (s *UserService) SignUp(ctx context.Context, reqData *types.CreateUser) error {
+func (s *UserService) SignUp(ctx context.Context, reqData *types.CreateUser) (*types.ResponseUser, string, error) {
 
 	count, err := s.storage.CountEmail(ctx, reqData.Email)
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
 	if count > 0 {
-		return errors.New("email already in use")
+		return nil, "", errors.New("email already in use")
 	}
 
 	password, err := hash(reqData.Password)
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
-	err = s.storage.CreateUser(
+	user, err := s.storage.CreateUser(
 		ctx,
 		uuid.NewString(),
 		reqData.Email,
@@ -48,10 +48,16 @@ func (s *UserService) SignUp(ctx context.Context, reqData *types.CreateUser) err
 	)
 
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 
-	return nil
+	// TODO: generate jwt token
+	token, err := tokens.GenerateJWT(user.UID, user.Email)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return user.ResponseUser(), token, nil
 }
 
 func (s *UserService) SignIn(ctx context.Context, reqData *types.LoginData) (*types.ResponseUser, string, error) {

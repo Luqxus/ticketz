@@ -15,3 +15,15 @@ class UnauthorizedException implements Exception {
 
   UnauthorizedException(this.message);
 }
+
+class CreateEventException implements Exception {
+  final String message;
+
+  CreateEventException(this.message);
+}
+
+class FetchEventException implements Exception {
+  final String message;
+
+  FetchEventException(this.message);
+}

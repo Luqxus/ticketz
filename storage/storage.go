@@ -8,7 +8,7 @@ import (
 )
 
 type Storage interface {
-	CreateUser(ctx context.Context, uid string, email string, username string, password string, createdAt time.Time) error
+	CreateUser(ctx context.Context, uid string, email string, username string, password string, createdAt time.Time) (*types.User, error)
 	GetUser(ctx context.Context, email string) (*types.User, error)
 	CountEmail(ctx context.Context, email string) (int64, error)
 	CreatEvent(ctx context.Context, event *types.Event) error
