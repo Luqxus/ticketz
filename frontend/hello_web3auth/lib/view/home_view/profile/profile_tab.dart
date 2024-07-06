@@ -7,17 +7,15 @@ class ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
 
-    return Scaffold(
-      body: SizedBox(
-        width: size.width,
-        height: size.height,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _createEventButton(),
-              _logoutButton(),
-            ],
-          ),
+    return SizedBox(
+      width: size.width,
+      height: size.height,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            _createEventButton(),
+            _logoutButton(),
+          ],
         ),
       ),
     );
