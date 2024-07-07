@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -25,7 +26,7 @@ func GenerateJWT(uid, email string) (string, error) {
 		UID:   uid,
 		Email: email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Local().UTC()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Local().UTC().Add(30 * time.Hour)),
 		},
 	}
 
@@ -59,5 +60,7 @@ func VerifyJWT(signedJWT string) (string, error) {
 		return "", errors.New("invalid authorization header")
 	}
 
+	log.Println(claims.ID)
+	log.Println(claims.Email)
 	return claims.UID, nil
 }

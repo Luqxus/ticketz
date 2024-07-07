@@ -19,10 +19,11 @@ func NewEventService(storage storage.Storage) *EventService {
 	}
 }
 
-func (s *EventService) CreateEvent(ctx context.Context, reqData types.CreateEvent) error {
+func (s *EventService) CreateEvent(ctx context.Context, uid string, reqData types.CreateEvent) error {
 	event := new(types.Event)
 
 	event.EventID = uuid.NewString()
+	event.Organizer = uid
 	event.Title = reqData.Title
 	event.Description = reqData.Description
 	event.TicketPrice = reqData.TicketPrice

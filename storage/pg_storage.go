@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -51,13 +52,14 @@ func (pg *PgStorage) CreatEvent(ctx context.Context, event *types.Event) error {
 	}
 
 	query := `
-	INSERT INTO Event (event_id, title, description, ticket_price, event_date, end_time, image_url, created_at) 
-	VALUES($1, $2, $3, $4, $5, $6, $7, $8)`
+	INSERT INTO Events (event_id, organizer, title, description, ticket_price, event_date, end_time, image_url, created_at) 
+	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 	_, err = tx.ExecContext(
 		ctx,
 		query,
 		event.EventID,
+		event.Organizer,
 		event.Title,
 		event.Description,
 		event.TicketPrice,
@@ -73,8 +75,8 @@ func (pg *PgStorage) CreatEvent(ctx context.Context, event *types.Event) error {
 	}
 
 	query = `
-	INSERT INTO Location (location_id, event_id, city, province, country) 
-	VALUES($1, $2, $3, $4, $5)`
+	INSERT INTO Locations (location_id, event_id, city, province, country, venue) 
+	VALUES($1, $2, $3, $4, $5, $6)`
 
 	_, err = tx.ExecContext(
 		ctx,
@@ -84,6 +86,7 @@ func (pg *PgStorage) CreatEvent(ctx context.Context, event *types.Event) error {
 		event.Location.City,
 		event.Location.Provice,
 		event.Location.Country,
+		event.Location.Venue,
 	)
 	if err != nil {
 		tx.Rollback()
@@ -96,8 +99,8 @@ func (pg *PgStorage) CreatEvent(ctx context.Context, event *types.Event) error {
 
 func (pg *PgStorage) GetEvents(ctx context.Context) ([]*types.Event, error) {
 	query := `
-	SELECT Event.event_id, Event.title, Event.description, Event.ticket_price, Event.event_date, Event.end_time, Event.image_url, Location.city, Location.province, Location.country 
-	FROM Event INNER JOIN LOCATION ON Event.event_id=Location.event_id`
+	SELECT Events.event_id, Events.organizer, Events.title, Events.description, Events.ticket_price, Events.event_date, Events.end_time, Events.image_url, Locations.city, Locations.province, Locations.country, Locations.venue 
+	FROM Events INNER JOIN Locations ON Events.event_id=Locations.event_id`
 
 	result, err := pg.db.QueryContext(ctx, query)
 	if err != nil {
@@ -113,6 +116,7 @@ func (pg *PgStorage) GetEvents(ctx context.Context) ([]*types.Event, error) {
 
 		err = result.Scan(
 			&event.EventID,
+			&event.Organizer,
 			&event.Title,
 			&event.Description,
 			&event.TicketPrice,
@@ -122,6 +126,7 @@ func (pg *PgStorage) GetEvents(ctx context.Context) ([]*types.Event, error) {
 			&event.Location.City,
 			&event.Location.Provice,
 			&event.Location.Country,
+			&event.Location.Venue,
 		)
 
 		if err != nil {
@@ -137,9 +142,9 @@ func (pg *PgStorage) GetEvents(ctx context.Context) ([]*types.Event, error) {
 
 func (pg *PgStorage) GetEvent(ctx context.Context, event_id string) (*types.Event, error) {
 	query := `
-	 SELECT Event.event_id, Event.title, Event.description, Event.ticket_price, Event.event_date, Event.end_time, Event.image_url, Location.city, Location.province, Location.country 
-	FROM Event INNER JOIN LOCATION ON Event.event_id=Location.event_id
-	WHERE EVENT.event_id=$1
+	 SELECT Events.event_id, Events.title, Events.description, Events.ticket_price, Events.event_date, Events.end_time, Events.image_url, Locations.city, Locations.province, Locations.country, Locations.venue 
+	FROM Events INNER JOIN Locations ON Events.event_id=Locations.event_id
+	WHERE Events.event_id=$1
 	`
 
 	row := pg.db.QueryRowContext(ctx, query, event_id)
@@ -160,6 +165,7 @@ func (pg *PgStorage) GetEvent(ctx context.Context, event_id string) (*types.Even
 		&event.Location.City,
 		&event.Location.Provice,
 		&event.Location.Country,
+		&event.Location.Venue,
 	); err != nil {
 		return nil, err
 	}
@@ -232,4 +238,136 @@ func (pg *PgStorage) CountEmail(ctx context.Context, email string) (int64, error
 	}
 
 	return count, nil
+}
+
+func (pg *PgStorage) CreateTicket(ctx context.Context, ticket *types.Ticket) error {
+	query := `
+	INSERT INTO Tickets (ticket_id, event_id, uid, created_at)
+	VALUES ($1, $2, $3, $4)
+	`
+
+	fmt.Printf("%+v\n", ticket)
+
+	_, err := pg.db.ExecContext(ctx, query, ticket.TicketID, ticket.EventID, ticket.UID, ticket.CreatedAt)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return err
+}
+
+func (pg *PgStorage) GetTicket(ctx context.Context, ticket_id string) (*types.GetTicket, error) {
+	query := `SELECT
+	Tickets.ticket_id, 
+    Events.event_id, 
+    Events.title, 
+    Events.ticket_price, 
+    Events.event_date, 
+    Events.image_url, 
+    Locations.city, 
+    Locations.province, 
+    Locations.country,
+	Locations.venue,
+	Tickets.created_at 
+	FROM 
+		Tickets
+	INNER JOIN 
+		Events 
+	ON 
+		Tickets.event_id = Events.event_id
+	INNER JOIN 
+		Locations 
+	ON 
+		Events.event_id = Locations.event_id
+	WHERE 
+		Tickets.ticket_id = $1`
+
+	row := pg.db.QueryRowContext(ctx, query, ticket_id)
+
+	if row.Err() != nil {
+		return nil, row.Err()
+	}
+
+	ticket := new(types.GetTicket)
+
+	if err := row.Scan(
+		&ticket.TicketID,
+		&ticket.EventID,
+		&ticket.EventTitle,
+		&ticket.EventPrice,
+		&ticket.EventDate,
+		&ticket.ImageUrl,
+		&ticket.Location.City,
+		&ticket.Location.Provice,
+		&ticket.Location.Country,
+		&ticket.Location.Venue,
+		&ticket.CreatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return ticket, nil
+}
+
+func (pg *PgStorage) GetTickets(ctx context.Context, uid string) ([]*types.GetTicket, error) {
+	query := `SELECT
+	Tickets.ticket_id, 
+    Events.event_id, 
+    Events.title, 
+    Events.ticket_price, 
+    Events.event_date, 
+    Events.image_url, 
+    Locations.city, 
+    Locations.province, 
+    Locations.country,
+	Locations.venue,
+	Tickets.created_at 
+	FROM 
+		Tickets
+	INNER JOIN 
+		Events 
+	ON 
+		Tickets.event_id = Events.event_id
+	INNER JOIN 
+		Locations 
+	ON 
+		Events.event_id = Locations.event_id
+	WHERE 
+		Tickets.uid = $1`
+
+	result, err := pg.db.QueryContext(ctx, query, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	defer result.Close()
+
+	tickets := make([]*types.GetTicket, 0)
+
+	for result.Next() {
+		ticket := new(types.GetTicket)
+
+		err = result.Scan(
+			&ticket.TicketID,
+			&ticket.EventID,
+			&ticket.EventTitle,
+			&ticket.EventPrice,
+			&ticket.EventDate,
+			&ticket.ImageUrl,
+			&ticket.Location.City,
+			&ticket.Location.Provice,
+			&ticket.Location.Country,
+			&ticket.Location.Venue,
+			&ticket.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		tickets = append(tickets, ticket)
+
+	}
+
+	return tickets, nil
 }

@@ -5,10 +5,11 @@ class HomeViewEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class ToggleHomeTabEvent extends HomeViewEvent {}
+class ToggleTabEvent extends HomeViewEvent {
+  final int index;
 
-class ToggleTicketsTabEvent extends HomeViewEvent {}
+  ToggleTabEvent(this.index);
 
-class ToggleProfileTabEvent extends HomeViewEvent {}
-
-class ToggleBookmarkTabEvent extends HomeViewEvent {}
+  @override
+  List<Object?> get props => [index];
+}

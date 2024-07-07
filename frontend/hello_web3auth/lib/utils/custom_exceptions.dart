@@ -27,3 +27,15 @@ class FetchEventException implements Exception {
 
   FetchEventException(this.message);
 }
+
+class BuyTicketException implements Exception {
+  final String message;
+
+  BuyTicketException(this.message);
+}
+
+class GetTicketException implements Exception {
+  final String message;
+
+  GetTicketException(this.message);
+}

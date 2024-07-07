@@ -18,7 +18,7 @@ class AuthWrapper extends StatelessWidget {
       } else if (state is SignUpViewState) {
         return SignUpScreen();
       } else {
-        return SplashScreen();
+        return const SplashScreen();
       }
     });
   }

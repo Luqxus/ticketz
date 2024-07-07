@@ -5,6 +5,7 @@ import "time"
 type Event struct {
 	EventID     string    `json:"event_id"`
 	Title       string    `json:"title"`
+	Organizer   string    `json:"organizer"`
 	Description string    `json:"description"`
 	ImageUrl    string    `json:"image_url"`
 	EventDate   time.Time `json:"event_date"`
@@ -29,4 +30,5 @@ type Location struct {
 	City       string `json:"city"`
 	Provice    string `json:"province"`
 	Country    string `json:"country"`
+	Venue      string `json:"venue"`
 }

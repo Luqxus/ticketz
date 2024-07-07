@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luquxSentinel/ticketz/middleware"
 	"github.com/luquxSentinel/ticketz/service"
 	"github.com/luquxSentinel/ticketz/types"
 )
@@ -19,15 +20,17 @@ type APIServer struct {
 	listenAddress string
 	router        *http.ServeMux
 	eventService  *service.EventService
-	userService   service.UserService
+	userService   *service.UserService
+	ticketService *service.TicketService
 }
 
-func NewAPIServer(listenAddress string, userService *service.UserService, eventService *service.EventService) *APIServer {
+func NewAPIServer(listenAddress string, userService *service.UserService, eventService *service.EventService, ticketService *service.TicketService) *APIServer {
 	return &APIServer{
 		listenAddress: listenAddress,
 		router:        http.NewServeMux(),
 		eventService:  eventService,
-		userService:   *userService,
+		userService:   userService,
+		ticketService: ticketService,
 	}
 }
 
@@ -44,18 +47,21 @@ func (api *APIServer) Run() error {
 	// ---- events endpoints -----
 
 	// create a new event
-	api.router.HandleFunc("POST /events", handlerFunc(api.createEvent))
+	api.router.Handle("POST /events", middleware.Authentication(handlerFunc(api.createEvent)))
 
 	// get event by :event_id
 	api.router.HandleFunc("GET /events/event/{event_id}", handlerFunc(api.getEvent))
 
 	// get all events
-	api.router.HandleFunc("GET /events/", handlerFunc(api.getEvents))
+	api.router.HandleFunc("GET /events", handlerFunc(api.getEvents))
 
 	// ------ tickets endpoints -----
 	// TODO: buy ticket
+	api.router.Handle("POST /events/tickets/{event_id}", middleware.Authentication(handlerFunc(api.createTicket)))
 	// TODO: get ticket
+	api.router.Handle("GET /events/tickets/ticket/{ticket_id}", middleware.Authentication(handlerFunc(api.getTicket)))
 	// TODO: get tickets by :uid
+	api.router.Handle("GET /events/tickets", middleware.Authentication(handlerFunc(api.getTickets)))
 
 	// --- start server and listen ---
 	return http.ListenAndServe(api.listenAddress, api.router)
@@ -116,6 +122,12 @@ func (api *APIServer) signIn(w http.ResponseWriter, r *http.Request) error {
 
 func (api *APIServer) createEvent(w http.ResponseWriter, r *http.Request) error {
 
+	uid := r.Context().Value("uid").(string)
+	if uid == "" {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return nil
+	}
+
 	reqData := new(types.CreateEvent)
 
 	if err := RequestReader(r.Body, reqData); err != nil {
@@ -123,7 +135,7 @@ func (api *APIServer) createEvent(w http.ResponseWriter, r *http.Request) error 
 		return nil
 	}
 
-	err := api.eventService.CreateEvent(r.Context(), *reqData)
+	err := api.eventService.CreateEvent(r.Context(), uid, *reqData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return nil
@@ -161,6 +173,77 @@ func (api *APIServer) getEvent(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return ResponseWriter(w, event)
+}
+
+func (api *APIServer) createTicket(w http.ResponseWriter, r *http.Request) error {
+
+	uid := r.Context().Value("uid").(string)
+	if uid == "" {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return nil
+	}
+
+	path := r.URL.Path
+	parts := strings.Split(path, "/")
+	if len(parts) != 4 {
+		http.Error(w, "invalid event id provided", http.StatusBadRequest)
+		return nil
+	}
+
+	event_id := parts[len(parts)-1]
+
+	err := api.ticketService.CreateTicket(r.Context(), uid, event_id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, map[string]string{"message": "ticket success bought"})
+}
+
+func (api *APIServer) getTicket(w http.ResponseWriter, r *http.Request) error {
+	uid := r.Context().Value("uid").(string)
+	if uid == "" {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return nil
+	}
+
+	path := r.URL.Path
+	parts := strings.Split(path, "/")
+	if len(parts) != 5 {
+		http.Error(w, "invalid event id provided", http.StatusBadRequest)
+		return nil
+	}
+
+	ticket_id := parts[len(parts)-1]
+	if ticket_id == "" {
+		http.Error(w, "invalid ticket id", http.StatusBadRequest)
+		return nil
+	}
+
+	ticket, err := api.ticketService.GetTicket(r.Context(), ticket_id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, ticket)
+}
+
+func (api *APIServer) getTickets(w http.ResponseWriter, r *http.Request) error {
+	uid := r.Context().Value("uid").(string)
+	if uid == "" {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return nil
+	}
+
+	tickets, err := api.ticketService.GetTickets(r.Context(), uid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, tickets)
 }
 
 // func (api *APIServer) removeEvent(w http.ResponseWriter, r *http.Request) error {
