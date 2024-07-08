@@ -10,14 +10,17 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+
     return BlocBuilder<EventsBloc, EventsState>(builder: (context, state) {
       if (state is FetchEventsSuccessState) {
         return HomeEventsView(events: state.events);
       } else if (state is FetchEventsFailureState) {
-        return const Center(
-          child: Text(
-            'Error Fetching Events\nCheck you internet connection',
-            textAlign: TextAlign.center,
+        return Center(
+          child: SizedBox(
+            width: size.width,
+            height: size.height * 0.5,
+            child: Image.asset("assets/internalservererror.png"),
           ),
         );
       } else {
@@ -38,8 +41,12 @@ class HomeEventsView extends StatelessWidget {
     Size size = MediaQuery.of(context).size;
 
     if (events.isEmpty) {
-      return const Center(
-        child: Text("Events will appear here"),
+      return Center(
+        child: SizedBox(
+          width: size.width,
+          height: size.height * 0.5,
+          child: Image.asset("assets/no_event.png"),
+        ),
       );
     } else {
       return ListView.builder(

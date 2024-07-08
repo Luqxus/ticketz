@@ -22,7 +22,7 @@ class TicketBloc extends Bloc<TicketEvent, TicketState> {
       List<TicketModel> tickets = await ticketRepository.getTickets(token!);
       emit(GetTicketsSuccessState(tickets));
     } catch (error) {
-      emit(GetTicketsFailed(error.toString()));
+      emit(GetTicketsFailed("Internal Server Error"));
     }
   }
 

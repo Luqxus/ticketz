@@ -12,6 +12,8 @@ class TicketsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+
     return BlocBuilder<TicketBloc, TicketState>(builder: (context, state) {
       if (state is TicketLoadingState) {
         return const SplashScreen();
@@ -19,7 +21,11 @@ class TicketsTab extends StatelessWidget {
         return HomeTicketsView(tickets: state.tickets);
       } else if (state is GetTicketsFailed) {
         return Center(
-          child: Text(state.error),
+          child: SizedBox(
+            width: size.width,
+            height: size.height * 0.5,
+            child: Image.asset("assets/internalservererror.png"),
+          ),
         );
       } else {
         return const SplashScreen();

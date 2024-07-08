@@ -23,7 +23,7 @@ abstract class EventRepository {
 class EventRepositoryImpl implements EventRepository {
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl: "http://20.20.17.77:4000",
+      baseUrl: "http://20.20.90.129:4000",
       receiveDataWhenStatusError: true,
       connectTimeout: const Duration(seconds: 60), // 60 seconds
       receiveTimeout: const Duration(seconds: 60), // 60 seconds
