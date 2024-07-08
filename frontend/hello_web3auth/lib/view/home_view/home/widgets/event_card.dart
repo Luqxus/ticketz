@@ -46,6 +46,7 @@ class EventCard extends StatelessWidget {
                   CircleAvatar(
                     backgroundColor: Colors.white.withOpacity(0.6),
                     child: InkWell(
+                      onTap: () {},
                       child: Icon(CupertinoIcons.bookmark),
                     ),
                   ),
