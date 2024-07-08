@@ -1,8 +1,13 @@
 module github.com/luquxSentinel/ticketz
 
-go 1.22.0
+go 1.22.5
 
 require github.com/google/uuid v1.6.0
+
+require (
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+)
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1

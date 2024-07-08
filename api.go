@@ -12,6 +12,7 @@ import (
 	"github.com/luquxSentinel/ticketz/middleware"
 	"github.com/luquxSentinel/ticketz/service"
 	"github.com/luquxSentinel/ticketz/types"
+	"github.com/sirupsen/logrus"
 )
 
 type APIFunc func(writer http.ResponseWriter, request *http.Request) error
@@ -19,12 +20,12 @@ type APIFunc func(writer http.ResponseWriter, request *http.Request) error
 type APIServer struct {
 	listenAddress string
 	router        *http.ServeMux
-	eventService  *service.EventService
-	userService   *service.UserService
-	ticketService *service.TicketService
+	eventService  service.IEventService
+	userService   service.IUserService
+	ticketService service.ITicketService
 }
 
-func NewAPIServer(listenAddress string, userService *service.UserService, eventService *service.EventService, ticketService *service.TicketService) *APIServer {
+func NewAPIServer(listenAddress string, userService service.IUserService, eventService service.IEventService, ticketService service.ITicketService) *APIServer {
 	return &APIServer{
 		listenAddress: listenAddress,
 		router:        http.NewServeMux(),
@@ -37,6 +38,9 @@ func NewAPIServer(listenAddress string, userService *service.UserService, eventS
 func (api *APIServer) Run() error {
 
 	// ---- authentication endpoints ----
+
+	// test endpoint
+	api.router.HandleFunc("GET /", handlerFunc(api.index))
 
 	// create a new account
 	api.router.HandleFunc("POST /users/register", handlerFunc(api.createUser))
@@ -64,6 +68,13 @@ func (api *APIServer) Run() error {
 	api.router.Handle("GET /events/tickets", middleware.Authentication(handlerFunc(api.getTickets)))
 
 	// --- start server and listen ---
+	parts := strings.Split(api.listenAddress, ":")
+
+	var log = logrus.New()
+	log.WithFields(logrus.Fields{
+		"host": parts[0],
+		"port": parts[1],
+	}).Info("Server running...")
 	return http.ListenAndServe(api.listenAddress, api.router)
 }
 
@@ -77,6 +88,10 @@ func handlerFunc(fn APIFunc) http.HandlerFunc {
 			log.Panic(err)
 		}
 	}
+}
+
+func (api *APIServer) index(w http.ResponseWriter, r *http.Request) error {
+	return ResponseWriter(w, map[string]string{"message": "test"})
 }
 
 func (api *APIServer) createUser(w http.ResponseWriter, r *http.Request) error {

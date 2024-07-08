@@ -13,22 +13,31 @@ import (
 	"github.com/luquxSentinel/ticketz/types"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "luqus"
-	password = "Luqus-@1041"
-	dbname   = "ticketz"
-)
+// const (
+// 	host     = "localhost"
+// 	port     = 5432
+// 	user     = "luqus"
+// 	password = "Luqus-@1041"
+// 	dbname   = "ticketz"
+// )
 
 type PgStorage struct {
 	db *sql.DB
 }
 
-func NewPgStorage() (*PgStorage, error) {
+type DatabaseConfig struct {
+	Host     string
+	User     string
+	Port     int
+	Password string
+	DBName   string
+}
+
+func NewPgStorage(config *DatabaseConfig) (*PgStorage, error) {
+
 	pgConfig := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		config.Host, config.Port, config.User, config.Password, config.DBName)
 
 	db, err := sql.Open("postgres", pgConfig)
 	if err != nil {

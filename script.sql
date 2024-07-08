@@ -26,7 +26,7 @@ CREATE TABLE Events (
 CREATE TABLE Locations (
   location_id VARCHAR PRIMARY KEY,
   event_id VARCHAR UNIQUE NOT NULL,
-  vanue VARCHAR NOT NULL,
+  venue VARCHAR NOT NULL,
   city VARCHAR NOT NULL,
   province VARCHAR NOT NULL,
   country VARCHAR NOT NULL

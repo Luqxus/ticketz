@@ -9,6 +9,12 @@ import (
 	"github.com/luquxSentinel/ticketz/types"
 )
 
+type ITicketService interface {
+	CreateTicket(ctx context.Context, uid string, eventId string) error
+	GetTickets(ctx context.Context, uid string) ([]*types.GetTicket, error)
+	GetTicket(ctx context.Context, ticket_id string) (*types.GetTicket, error)
+}
+
 type TicketService struct {
 	storage storage.Storage
 }

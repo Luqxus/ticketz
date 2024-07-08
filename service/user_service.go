@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type IUserService interface {
+	SignUp(ctx context.Context, reqData *types.CreateUser) (*types.ResponseUser, string, error)
+	SignIn(ctx context.Context, reqData *types.LoginData) (*types.ResponseUser, string, error)
+}
+
 type UserService struct {
 	storage storage.Storage
 }

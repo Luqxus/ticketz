@@ -53,7 +53,7 @@ func VerifyJWT(signedJWT string) (string, error) {
 	})
 
 	if err != nil {
-		return "", errors.Join(errors.New("invalid authorization header"), err)
+		return "", errors.New("invalid authorization header")
 	}
 
 	if !token.Valid {

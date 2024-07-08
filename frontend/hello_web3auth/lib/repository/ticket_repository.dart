@@ -13,7 +13,7 @@ abstract class TicketRepository {
 class TicketRepositoryImpl implements TicketRepository {
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl: "http://192.168.1.105:4000",
+      baseUrl: "http://20.20.17.77:4000",
       receiveDataWhenStatusError: true,
       connectTimeout: const Duration(seconds: 60), // 60 seconds
       receiveTimeout: const Duration(seconds: 60), // 60 seconds
