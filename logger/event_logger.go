@@ -30,9 +30,9 @@ func (s *EventLogger) CreateEvent(ctx context.Context, uid string, reqData types
 	return err
 }
 
-func (s *EventLogger) GetEvents(ctx context.Context) ([]*types.Event, error) {
+func (s *EventLogger) GetEvents(ctx context.Context, uid string) ([]*types.Event, error) {
 
-	events, err := s.eventService.GetEvents(ctx)
+	events, err := s.eventService.GetEvents(ctx, uid)
 	s.logger.WithFields(logrus.Fields{
 		"error": err,
 	}).Info("get events")
@@ -47,4 +47,13 @@ func (s *EventLogger) GetEvent(ctx context.Context, event_id string) (*types.Eve
 	}).Info("get events")
 
 	return event, err
+}
+
+func (s *EventLogger) BookmarkEvent(ctx context.Context, uid string, eventID string) error {
+	err := s.eventService.BookmarkEvent(ctx, uid, eventID)
+	s.logger.WithFields(logrus.Fields{
+		"error": err,
+	}).Info("bookmark event")
+
+	return err
 }

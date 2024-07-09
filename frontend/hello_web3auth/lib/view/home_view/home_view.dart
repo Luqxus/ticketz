@@ -9,8 +9,10 @@ import 'package:hello_web3auth/bloc/tickets/event.dart';
 import 'package:hello_web3auth/view/home_view/bloc/bloc.dart';
 import 'package:hello_web3auth/view/home_view/bloc/event.dart';
 import 'package:hello_web3auth/view/home_view/bloc/state.dart';
+import 'package:hello_web3auth/view/home_view/home/widgets/bookmarks_tab.dart';
 import 'package:hello_web3auth/view/home_view/home/widgets/home_tab.dart';
 import 'package:hello_web3auth/view/home_view/home/widgets/tickets_tab.dart';
+import 'package:hello_web3auth/view/home_view/profile/profile_tab.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -41,30 +43,33 @@ class HomeScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             children: [
               // home page | events bloc provider
+              MultiBlocProvider(providers: [
+                BlocProvider.value(
+                  value: BlocProvider.of<EventsBloc>(context)
+                    ..add(FetchEventsEvent()),
+                ),
+                BlocProvider.value(
+                  value: BlocProvider.of<TicketBloc>(context)
+                    ..add(GetTicketsEvent()),
+                ),
+              ], child: const HomeTab()),
+
+              // bookmark page | TODO: bookmark bloc provider
               BlocProvider.value(
                 value: BlocProvider.of<EventsBloc>(context)
                   ..add(FetchEventsEvent()),
-                child: const HomeTab(),
-              ),
-
-              // bookmark page | TODO: bookmark bloc provider
-              const Center(
-                child: Text("Bookmark"),
+                child: const BookmarksTab(),
               ),
 
               // tickets page | tickets bloc provider
               BlocProvider.value(
                 value: BlocProvider.of<TicketBloc>(context)
                   ..add(GetTicketsEvent()),
-                child: const Center(
-                  child: TicketsTab(),
-                ),
+                child: const TicketsTab(),
               ),
 
               // profile page | TODO: user bloc provider
-              const Center(
-                child: Text("Profile"),
-              ),
+              const ProfileTab()
             ],
           ),
         ),

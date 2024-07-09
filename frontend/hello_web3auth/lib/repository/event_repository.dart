@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:hello_web3auth/models/event_model.dart';
+import 'package:hello_web3auth/service/secure_storage.dart';
 import 'package:hello_web3auth/utils/custom_exceptions.dart';
 
 abstract class EventRepository {
@@ -13,17 +14,22 @@ abstract class EventRepository {
     required String province,
     required String country,
     required String title,
+    required String venue,
+    required double price,
+    required DateTime endDate,
   });
 
   Future<EventModel> getEvent({required String eventID});
 
   Future<List<EventModel>> getEvents();
+
+  Future<void> bookmarkEvent({required String eventID});
 }
 
 class EventRepositoryImpl implements EventRepository {
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl: "http://20.20.90.129:4000",
+      baseUrl: "http://192.168.1.105:4000",
       receiveDataWhenStatusError: true,
       connectTimeout: const Duration(seconds: 60), // 60 seconds
       receiveTimeout: const Duration(seconds: 60), // 60 seconds
@@ -39,19 +45,32 @@ class EventRepositoryImpl implements EventRepository {
     required String province,
     required String country,
     required String title,
+    required String venue,
+    required double price,
+    required DateTime endDate,
   }) async {
     try {
-      Response response = await dio.post("/events", data: {
-        'description': description,
-        'eventDate': eventDate,
-        'imageUrl': imageUrl,
-        'location': {
-          'city': city,
-          'province': province,
-          'country': country,
+      print("create event");
+      Response response = await dio.post(
+        "/events",
+        data: {
+          'description': description,
+          'event_date': eventDate.toUtc().toIso8601String(),
+          'image_url': imageUrl,
+          'event_price': price,
+          'location': {
+            'city': city,
+            'province': province,
+            'country': country,
+            'venue': venue,
+          },
+          'end_time': endDate.toUtc().toIso8601String(),
+          'title': title,
         },
-        'title': title,
-      });
+        options: Options(
+          headers: {"authorization": await SecureStorage().getToken()},
+        ),
+      );
 
       if (response.statusCode != 200) {
         throw CreateEventException(jsonDecode(response.data)['message']);
@@ -79,7 +98,14 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<List<EventModel>> getEvents() async {
     try {
-      Response response = await dio.get("/events");
+      Response response = await dio.get(
+        "/events",
+        options: Options(
+          headers: {
+            "authorization": await SecureStorage().getToken(),
+          },
+        ),
+      );
 
       if (response.statusCode == 200) {
         List<EventModel> events = [];
@@ -93,6 +119,29 @@ class EventRepositoryImpl implements EventRepository {
       }
 
       throw FetchEventException(jsonDecode(response.data)['message']);
+    } catch (error) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> bookmarkEvent({required String eventID}) async {
+    try {
+      print("Bookmark event");
+      Response response = await dio.post(
+        "/events/bookmark/$eventID",
+        options: Options(
+          headers: {
+            "authorization": await SecureStorage().getToken(),
+          },
+        ),
+      );
+
+      print(response.data);
+
+      if (response.statusCode != 200) {
+        throw FetchEventException(jsonDecode(response.data)['message']);
+      }
     } catch (error) {
       rethrow;
     }

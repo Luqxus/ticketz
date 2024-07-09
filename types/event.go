@@ -3,16 +3,17 @@ package types
 import "time"
 
 type Event struct {
-	EventID     string    `json:"event_id"`
-	Title       string    `json:"title"`
-	Organizer   string    `json:"organizer"`
-	Description string    `json:"description"`
-	ImageUrl    string    `json:"image_url"`
-	EventDate   time.Time `json:"event_date"`
-	Location    Location  `json:"location"`
-	TicketPrice float64   `json:"event_price"`
-	EndTime     time.Time `json:"end_time"`
-	CreatedAt   time.Time `json:"created_at"`
+	EventID      string    `json:"event_id"`
+	Title        string    `json:"title"`
+	Organizer    string    `json:"organizer"`
+	Description  string    `json:"description"`
+	ImageUrl     string    `json:"image_url"`
+	EventDate    time.Time `json:"event_date"`
+	Location     Location  `json:"location"`
+	TicketPrice  float64   `json:"event_price"`
+	EndTime      time.Time `json:"end_time"`
+	IsBookmarked bool      `json:"is_bookmarked"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type CreateEvent struct {

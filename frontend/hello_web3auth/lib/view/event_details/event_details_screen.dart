@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hello_web3auth/models/event_model.dart';
+import 'package:hello_web3auth/view/create_event/bloc/state.dart';
+import 'package:hello_web3auth/view/event_details/bloc/bloc.dart';
+import 'package:hello_web3auth/view/event_details/bloc/event.dart';
+import 'package:hello_web3auth/view/event_details/bloc/state.dart';
 
 class EventDetailsScreen extends StatelessWidget {
   const EventDetailsScreen({super.key, required this.event});
@@ -9,94 +14,126 @@ class EventDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    return SafeArea(
-      child: Scaffold(
-        body: SizedBox(
-          width: size.width,
-          height: size.height,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                EventDetailsCard(
-                  size: size,
-                  title: event.title,
-                  city: event.location.city,
-                  country: event.location.country,
-                  imageUrl: event.imageUrl,
-                  price: event.price,
-                  venue: event.location.venue,
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(
-                      left: 20.0, top: 20.0, bottom: 4.0, right: 20.0),
-                  child: Text(
-                    "About this event",
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+    return BlocListener<CreateTicketBloc, CreateTicketState>(
+      listener: (context, state) {
+        // Navigator.pop(context);
+      },
+      child: SafeArea(
+        child: Scaffold(
+          body: SizedBox(
+            width: size.width,
+            height: size.height,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  EventDetailsCard(
+                    size: size,
+                    title: event.title,
+                    city: event.location.city,
+                    country: event.location.country,
+                    imageUrl: event.imageUrl,
+                    price: event.price,
+                    venue: event.location.venue,
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 6.0, horizontal: 20.0),
-                  child: Text(
-                    event.description,
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                      fontSize: 14.0,
+                  const Padding(
+                    padding: EdgeInsets.only(
+                        left: 20.0, top: 20.0, bottom: 4.0, right: 20.0),
+                    child: Text(
+                      "About this event",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16.0),
                     ),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 6.0, horizontal: 20.0),
+                    child: Text(
+                      event.description,
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        bottomNavigationBar: SizedBox(
-          height: 70,
-          child: Padding(
-            padding:
-                const EdgeInsets.only(bottom: 8.0, left: 32.0, right: 32.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  children: [
-                    Text(
-                      "Total Price",
-                      style: TextStyle(
-                        fontSize: 14.0,
-                        color: Colors.grey[500],
+          bottomNavigationBar: SizedBox(
+            height: 70,
+            child: Padding(
+              padding:
+                  const EdgeInsets.only(bottom: 8.0, left: 32.0, right: 32.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    children: [
+                      Text(
+                        "Total Price",
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          color: Colors.grey[500],
+                        ),
                       ),
-                    ),
-                    Text(
-                      "R${event.price}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18.0,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      Text(
+                        (event.price > 0) ? "R${event.price}" : "Free",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18.0,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.onPrimaryContainer,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0))),
-                  onPressed: () {},
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12.0, horizontal: 12.0),
-                    child: Text(
-                      'Buy Ticket',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondaryContainer,
-                      ),
-                    ),
+                    ],
                   ),
-                )
-              ],
+                  TextButton(
+                    style: TextButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.onPrimaryContainer,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0))),
+                    onPressed: () {
+                      BlocProvider.of<CreateTicketBloc>(context)
+                          .add(BuyTicketEvent(event.eventId));
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12.0, horizontal: 12.0),
+                      child: BlocBuilder<CreateTicketBloc, CreateTicketState>(
+                        builder: (context, state) {
+                          if (state is CreateTicketLoadingState) {
+                            return const CircularProgressIndicator();
+                          } else if (state is CreateTicketFailedState) {
+                            return const Icon(
+                              Icons.error,
+                              color: Colors.redAccent,
+                            );
+                          } else if (state is CreateTicketSuccessState) {
+                            return Text(
+                              'Done',
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                              ),
+                            );
+                          }
+                          return Text(
+                            'Buy Ticket',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .secondaryContainer,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
         ),
@@ -182,7 +219,7 @@ class EventDetailsCard extends StatelessWidget {
                           ),
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            'R $price',
+                            (price > 0) ? 'R $price' : "Free",
                             style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: Theme.of(context)

@@ -39,9 +39,6 @@ func (api *APIServer) Run() error {
 
 	// ---- authentication endpoints ----
 
-	// test endpoint
-	api.router.HandleFunc("GET /", handlerFunc(api.index))
-
 	// create a new account
 	api.router.HandleFunc("POST /users/register", handlerFunc(api.createUser))
 
@@ -57,7 +54,10 @@ func (api *APIServer) Run() error {
 	api.router.HandleFunc("GET /events/event/{event_id}", handlerFunc(api.getEvent))
 
 	// get all events
-	api.router.HandleFunc("GET /events", handlerFunc(api.getEvents))
+	api.router.Handle("GET /events", middleware.Authentication(handlerFunc(api.getEvents)))
+
+	// bookmark events
+	api.router.Handle("POST /events/bookmark/{event_id}", middleware.Authentication(handlerFunc(api.bookmarkEvent)))
 
 	// ------ tickets endpoints -----
 	// TODO: buy ticket
@@ -88,10 +88,6 @@ func handlerFunc(fn APIFunc) http.HandlerFunc {
 			log.Panic(err)
 		}
 	}
-}
-
-func (api *APIServer) index(w http.ResponseWriter, r *http.Request) error {
-	return ResponseWriter(w, map[string]string{"message": "test"})
 }
 
 func (api *APIServer) createUser(w http.ResponseWriter, r *http.Request) error {
@@ -146,6 +142,7 @@ func (api *APIServer) createEvent(w http.ResponseWriter, r *http.Request) error 
 	reqData := new(types.CreateEvent)
 
 	if err := RequestReader(r.Body, reqData); err != nil {
+		log.Println(err.Error())
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return nil
 	}
@@ -161,7 +158,13 @@ func (api *APIServer) createEvent(w http.ResponseWriter, r *http.Request) error 
 
 func (api *APIServer) getEvents(w http.ResponseWriter, r *http.Request) error {
 
-	events, err := api.eventService.GetEvents(r.Context())
+	uid := r.Context().Value("uid").(string)
+	if uid == "" {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return nil
+	}
+
+	events, err := api.eventService.GetEvents(r.Context(), uid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return nil
@@ -259,6 +262,30 @@ func (api *APIServer) getTickets(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return ResponseWriter(w, tickets)
+}
+
+func (api *APIServer) bookmarkEvent(w http.ResponseWriter, r *http.Request) error {
+	log.Println("Bookmark event")
+	uid := r.Context().Value("uid").(string)
+	if uid == "" {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return nil
+	}
+
+	path := r.URL.Path
+	parts := strings.Split(path, "/")
+	if len(parts) != 4 {
+		http.Error(w, "invalid event id provided", http.StatusBadRequest)
+		return nil
+	}
+
+	err := api.eventService.BookmarkEvent(r.Context(), uid, parts[3])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
+	return ResponseWriter(w, map[string]string{"message": "event bookmarked"})
 }
 
 // func (api *APIServer) removeEvent(w http.ResponseWriter, r *http.Request) error {

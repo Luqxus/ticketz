@@ -1,6 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hello_web3auth/bloc/bookmark/bloc.dart';
+import 'package:hello_web3auth/bloc/bookmark/event.dart';
+import 'package:hello_web3auth/bloc/bookmark/state.dart';
 import 'package:hello_web3auth/models/event_model.dart';
+import 'package:hello_web3auth/view/create_event/bloc/state.dart';
+import 'package:hello_web3auth/view/event_details/bloc/bloc.dart';
+import 'package:hello_web3auth/view/event_details/bloc/state.dart';
 import 'package:hello_web3auth/view/event_details/event_details_screen.dart';
 
 class EventCard extends StatelessWidget {
@@ -23,7 +30,10 @@ class EventCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EventDetailsScreen(event: event),
+              builder: (context) => BlocProvider<CreateTicketBloc>(
+                create: (context) => CreateTicketBloc(),
+                child: EventDetailsScreen(event: event),
+              ),
             ),
           );
         },
@@ -42,12 +52,15 @@ class EventCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.white.withOpacity(0.6),
-                    child: InkWell(
-                      onTap: () {},
-                      child: Icon(CupertinoIcons.bookmark),
+                  BlocProvider(
+                    create: (context) => BookmarkBloc()
+                      ..add(
+                        SetInitialStateEvent(event.isBookmarked),
+                      ),
+                    child: BookmarkButton(
+                      eventID: event.eventId,
                     ),
                   ),
                 ],
@@ -129,9 +142,42 @@ class EventCard extends StatelessWidget {
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class BookmarkButton extends StatelessWidget {
+  const BookmarkButton({super.key, required this.eventID});
+
+  final String eventID;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      backgroundColor: Colors.white.withOpacity(0.8),
+      child: InkWell(
+        onTap: () {
+          BlocProvider.of<BookmarkBloc>(context)
+              .add(ToggleBookmarkEvent(eventID));
+        },
+        child: BlocBuilder<BookmarkBloc, BookmarkState>(
+          builder: (context, state) {
+            if (state.bookmarked) {
+              return Icon(
+                CupertinoIcons.bookmark_fill,
+                color: Theme.of(context).primaryColor,
+              );
+            }
+            return const Icon(
+              CupertinoIcons.bookmark,
+              color: Colors.black,
+            );
+          },
         ),
       ),
     );

@@ -38,6 +38,7 @@ CREATE TABLE Tickets (
     uid VARCHAR NOT NULL
 );
 
+
 -- Add Foreign Key Constraints
 ALTER TABLE Tickets
 ADD CONSTRAINT fk_event

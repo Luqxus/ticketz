@@ -40,13 +40,19 @@ class HomeTicketsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+
     if (tickets.isEmpty) {
-      return const Center(
-        child: Text("Your Tickets will appear here"),
+      return Center(
+        child: SizedBox(
+          width: size.width,
+          height: size.height * 0.5,
+          child: Image.asset("assets/no_bookmarks.png"),
+        ),
       );
     } else {
       return ListView.builder(
-        itemCount: 20,
+        itemCount: tickets.length,
         shrinkWrap: true,
         itemBuilder: (context, int index) {
           return TicketCard(

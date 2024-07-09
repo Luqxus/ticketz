@@ -23,7 +23,7 @@ class AuthFormTextField extends StatelessWidget {
         ),
         hintText: hintText,
         filled: true,
-        fillColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.4),
+        fillColor: Theme.of(context).colorScheme.secondaryContainer,
       ),
     );
   }

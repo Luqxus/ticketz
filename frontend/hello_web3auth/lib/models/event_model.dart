@@ -10,6 +10,7 @@ class EventModel {
   // final DateTime endDate;
   // final DateTime createdAt;
   final LocationModel location;
+  final bool isBookmarked;
 
   EventModel({
     // required this.createdAt,
@@ -20,6 +21,7 @@ class EventModel {
     required this.imageUrl,
     required this.location,
     required this.title,
+    required this.isBookmarked,
     // required this.endDate,
   });
 
@@ -34,6 +36,7 @@ class EventModel {
       imageUrl: data['image_url']!,
       location: LocationModel.fromMap(data['location']!),
       title: data['title']!,
+      isBookmarked: data['is_bookmarked']!,
     );
   }
 }

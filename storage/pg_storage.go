@@ -8,6 +8,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
 	"github.com/luquxSentinel/ticketz/types"
@@ -106,12 +107,38 @@ func (pg *PgStorage) CreatEvent(ctx context.Context, event *types.Event) error {
 	return nil
 }
 
-func (pg *PgStorage) GetEvents(ctx context.Context) ([]*types.Event, error) {
+func (pg *PgStorage) GetEvents(ctx context.Context, uid string) ([]*types.Event, error) {
 	query := `
-	SELECT Events.event_id, Events.organizer, Events.title, Events.description, Events.ticket_price, Events.event_date, Events.end_time, Events.image_url, Locations.city, Locations.province, Locations.country, Locations.venue 
-	FROM Events INNER JOIN Locations ON Events.event_id=Locations.event_id`
+	SELECT 
+    Events.event_id, 
+    Events.organizer, 
+    Events.title, 
+    Events.description, 
+    Events.ticket_price, 
+    Events.event_date, 
+    Events.end_time, 
+    Events.image_url, 
+    Locations.city, 
+    Locations.province, 
+    Locations.country, 
+    Locations.venue,
+    CASE 
+        WHEN Bookmarks.bookmark_id IS NOT NULL THEN 'true' 
+        ELSE 'false' 
+    END AS is_bookmarked
+	FROM 
+		Events 
+	INNER JOIN 
+		Locations 
+	ON 
+		Events.event_id = Locations.event_id
+	LEFT JOIN 
+		Bookmarks 
+	ON 
+		Events.event_id = Bookmarks.event_id 
+		AND Bookmarks.uid = $1`
 
-	result, err := pg.db.QueryContext(ctx, query)
+	result, err := pg.db.QueryContext(ctx, query, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +163,7 @@ func (pg *PgStorage) GetEvents(ctx context.Context) ([]*types.Event, error) {
 			&event.Location.Provice,
 			&event.Location.Country,
 			&event.Location.Venue,
+			&event.IsBookmarked,
 		)
 
 		if err != nil {
@@ -254,8 +282,6 @@ func (pg *PgStorage) CreateTicket(ctx context.Context, ticket *types.Ticket) err
 	INSERT INTO Tickets (ticket_id, event_id, uid, created_at)
 	VALUES ($1, $2, $3, $4)
 	`
-
-	fmt.Printf("%+v\n", ticket)
 
 	_, err := pg.db.ExecContext(ctx, query, ticket.TicketID, ticket.EventID, ticket.UID, ticket.CreatedAt)
 	if err != nil {
@@ -379,4 +405,32 @@ func (pg *PgStorage) GetTickets(ctx context.Context, uid string) ([]*types.GetTi
 	}
 
 	return tickets, nil
+}
+
+func (pg *PgStorage) BookmarkEvent(ctx context.Context, uid string, eventID string) error {
+	// Check if the bookmark already exists
+	var exists bool
+	query := "SELECT EXISTS (SELECT 1 FROM Bookmarks WHERE event_id = $1 AND uid = $2)"
+	err := pg.db.QueryRow(query, eventID, uid).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check if bookmark exists: %v", err)
+	}
+
+	if exists {
+		// If it exists, delete it
+		deleteQuery := "DELETE FROM Bookmarks WHERE event_id = $1 AND uid = $2"
+		_, err = pg.db.Exec(deleteQuery, eventID, uid)
+		if err != nil {
+			return fmt.Errorf("failed to delete bookmark: %v", err)
+		}
+	} else {
+		// If it does not exist, insert it
+		insertQuery := "INSERT INTO Bookmarks (bookmark_id, event_id, uid) VALUES ($1, $2, $3)"
+		_, err = pg.db.Exec(insertQuery, uuid.NewString(), eventID, uid)
+		if err != nil {
+			return fmt.Errorf("failed to insert bookmark: %v", err)
+		}
+	}
+
+	return nil
 }

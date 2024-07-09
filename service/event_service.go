@@ -11,8 +11,9 @@ import (
 
 type IEventService interface {
 	CreateEvent(ctx context.Context, uid string, reqData types.CreateEvent) error
-	GetEvents(ctx context.Context) ([]*types.Event, error)
+	GetEvents(ctx context.Context, uid string) ([]*types.Event, error)
 	GetEvent(ctx context.Context, event_id string) (*types.Event, error)
+	BookmarkEvent(ctx context.Context, uid string, eventID string) error
 }
 
 type EventService struct {
@@ -43,10 +44,14 @@ func (s *EventService) CreateEvent(ctx context.Context, uid string, reqData type
 	return s.storage.CreatEvent(ctx, event)
 }
 
-func (s *EventService) GetEvents(ctx context.Context) ([]*types.Event, error) {
-	return s.storage.GetEvents(ctx)
+func (s *EventService) GetEvents(ctx context.Context, uid string) ([]*types.Event, error) {
+	return s.storage.GetEvents(ctx, uid)
 }
 
 func (s *EventService) GetEvent(ctx context.Context, event_id string) (*types.Event, error) {
 	return s.storage.GetEvent(ctx, event_id)
+}
+
+func (s *EventService) BookmarkEvent(ctx context.Context, uid string, eventID string) error {
+	return s.storage.BookmarkEvent(ctx, uid, eventID)
 }

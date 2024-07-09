@@ -20,7 +20,7 @@ class UserRepositoryImpl implements UserRepository {
   // final baseUrl = "http://192.168.1.105:4000";
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl: "http://20.20.90.129:4000",
+      baseUrl: "http://192.168.1.105:4000",
       receiveDataWhenStatusError: true,
       connectTimeout: const Duration(seconds: 60), // 60 seconds
       receiveTimeout: const Duration(seconds: 60), // 60 seconds
